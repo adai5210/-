@@ -1,0 +1,83 @@
+import requests
+from selenium import webdriver
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.common.action_chains import ActionChains
+import time
+
+username = input("请输入登录账号（手机号）：")
+password = input("请输入登录密码：")
+
+print("请在弹出的网页中输入验证码！")
+time.sleep(2)
+#登录
+url = "https://www.sqgj.gov.cn/"
+driver = webdriver.Chrome(executable_path='chromedriver.exe')
+driver.get(url)
+driver.find_element_by_xpath('//*[@id="new_mobilePhoneLogin"]').send_keys(username)
+driver.find_element_by_xpath('//*[@id="new_passWordLogin"]').send_keys(password)
+time.sleep(6)
+driver.find_element_by_xpath('//*[@id="newLogin"]/div[2]/ul[1]/li[4]/button').click()
+time.sleep(5)
+xuexicishu = 0
+#kecheng = driver.find_elements_by_xpath('/html/body/div[2]/div[2]/div/div[2]/div[3]/ul/li/ul[1]/li[1]')
+#total_kecheng = len(kecheng)
+while True:
+    driver.find_element_by_xpath('/html/body/div[2]/div[2]/div/div[2]/div[3]/ul/li[1]/ul[1]/li[1]').click()
+
+
+    time.sleep(5)
+    xuexicishu = xuexicishu+1
+    windows = driver.window_handles
+    driver.switch_to.window(windows[1])
+    time.sleep(5)
+    # 选择学习视频
+    count = driver.find_elements_by_xpath('/html/body/div[2]/div[2]/div[3]/div/div/div[2]/ul/li[@class !="hasStudy"]/span[2]')
+
+    for i in range(0, len(count)):
+        time.sleep(2)
+        count = driver.find_elements_by_xpath('/html/body/div[2]/div[2]/div[3]/div/div/div[2]/ul/li[@class !="hasStudy"]/span[2]')
+        print(i)
+      
+        count[0].click()
+     
+        time.sleep(10)
+
+        # 切换到播放窗口
+        windows = driver.window_handles
+        driver.switch_to.window(windows[2])
+
+        # 确认课程学习时间
+        keshi = driver.find_element_by_xpath('//*[@id="study"]/span[1]/strong').text
+        yixueshijian = driver.find_element_by_xpath('/html/body/div[2]/div[2]/div[2]/div[1]/span[2]/strong').text
+        if int (keshi)-int(yixueshijian)>0:
+            study_time = int(keshi) - int(yixueshijian)
+        else:
+            study_time = 0.01
+        print(study_time)
+        iframe = driver.find_element_by_xpath('//*[@id="playResourceFrame"]')
+
+        driver.switch_to_frame(iframe)
+        time.sleep(3)
+        driver.find_element_by_xpath('/html/body/div[2]/div/div[3]/div[2]').click()
+        time.sleep(study_time * 60 + 63)
+
+        # 点击退出
+
+        time.sleep(3)
+        driver.find_element_by_xpath('//*[@id="exit"]').click()
+        time.sleep(3)
+        driver.switch_to_alert().accept()
+        time.sleep(3)
+        driver.switch_to_alert().accept()
+        time.sleep(5)
+        windows = driver.window_handles
+        driver.switch_to.window(windows[1])
+        driver.refresh()
+        time.sleep(6)
+    driver.close()
+    windows = driver.window_handles
+    driver.switch_to.window(windows[0])
+    driver.refresh()
+    time.sleep(5)
+
+    print("干部培训网，完成第"+str(xuexicishu)+"次学习")
