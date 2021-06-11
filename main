@@ -1,45 +1,104 @@
-import requests
+import datetime
+import json
+from aip import AipOcr
+from PIL import Image
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.action_chains import ActionChains
 import time
 
+def get_file_content(filePath):
+    with open(filePath, 'rb') as fp:
+        return fp.read()
+
+
+
+def pic_shibie():#百度AI平台注册自己的接口（1000次/月，免费）
+    APP_ID = '*******'
+    API_KEY = '**************'
+    SECRET_KEY = '************'
+
+    client = AipOcr(APP_ID, API_KEY, SECRET_KEY)
+    image = get_file_content('000.png')
+    s = client.basicGeneral(image)
+    s = json.dumps(s)
+    s = json.loads(s)
+    word = s["words_result"]
+    print(type(word[0]))
+    code = word[0]["words"]
+    print(code)
+    return code
+
+def pic_caijian():
+    img = Image.open('222.png')
+
+    cropped = img.crop((450, 450, 650, 550))  # (left, upper, right, lower)
+    cropped.save("000.png")
+    print('ok')
+
+
+
+
 username = input("请输入登录账号（手机号）：")
 password = input("请输入登录密码：")
+#
+# print("请在弹出的网页中输入验证码！")
+# time.sleep(2)
+# 登录
 
-print("请在弹出的网页中输入验证码！")
-time.sleep(2)
-#登录
+
+
 url = "https://www.sqgj.gov.cn/"
 driver = webdriver.Chrome(executable_path='chromedriver.exe')
 driver.get(url)
+driver.maximize_window()
 driver.find_element_by_xpath('//*[@id="new_mobilePhoneLogin"]').send_keys(username)
 driver.find_element_by_xpath('//*[@id="new_passWordLogin"]').send_keys(password)
-time.sleep(6)
-driver.find_element_by_xpath('//*[@id="newLogin"]/div[2]/ul[1]/li[4]/button').click()
+pic = driver.find_element_by_xpath('/html/body/div[3]/div[2]/div/div[1]/div[1]/div/div[1]/div[2]/ul[1]/li[3]/div/span/img')
+loc = pic.location
+size = pic.size
+print(loc)
+print(size)
+try:
+    picture_url=driver.save_screenshot('222.png')
+    print("%s ：截图成功！！！" % picture_url)
+except BaseException as msg:
+    print("%s ：截图失败！！！" % msg)
+    date = str(datetime.date.today())
+    year = date[:4]
+    if year != '2021':
+        exit()
+pic_caijian()
+code = pic_shibie()
+driver.find_element_by_xpath('/html/body/div[3]/div[2]/div/div[1]/div[1]/div/div[1]/div[2]/ul[1]/li[3]/div/input').send_keys(code)
+time.sleep(3)
+
+driver.find_element_by_xpath('/html/body/div[3]/div[2]/div/div[1]/div[1]/div/div[1]/div[2]/ul[1]/li[4]/button').click()
+
 time.sleep(5)
 xuexicishu = 0
-#kecheng = driver.find_elements_by_xpath('/html/body/div[2]/div[2]/div/div[2]/div[3]/ul/li/ul[1]/li[1]')
-#total_kecheng = len(kecheng)
+# kecheng = driver.find_elements_by_xpath('/html/body/div[2]/div[2]/div/div[2]/div[3]/ul/li/ul[1]/li[1]')
+# total_kecheng = len(kecheng)
 while True:
     driver.find_element_by_xpath('/html/body/div[2]/div[2]/div/div[2]/div[3]/ul/li[1]/ul[1]/li[1]').click()
 
-
     time.sleep(5)
-    xuexicishu = xuexicishu+1
+    xuexicishu = xuexicishu + 1
     windows = driver.window_handles
     driver.switch_to.window(windows[1])
     time.sleep(5)
     # 选择学习视频
-    count = driver.find_elements_by_xpath('/html/body/div[2]/div[2]/div[3]/div/div/div[2]/ul/li[@class !="hasStudy"]/span[2]')
+    count = driver.find_elements_by_xpath(
+        '/html/body/div[2]/div[2]/div[3]/div/div/div[2]/ul/li[@class !="hasStudy"]/span[2]')
 
     for i in range(0, len(count)):
         time.sleep(2)
-        count = driver.find_elements_by_xpath('/html/body/div[2]/div[2]/div[3]/div/div/div[2]/ul/li[@class !="hasStudy"]/span[2]')
-        print(i)
-      
+        count = driver.find_elements_by_xpath(
+            '/html/body/div[2]/div[2]/div[3]/div/div/div[2]/ul/li[@class !="hasStudy"]/span[2]')
+        print(f"这是第{i}次学习")
+
         count[0].click()
-     
+
         time.sleep(10)
 
         # 切换到播放窗口
@@ -48,12 +107,13 @@ while True:
 
         # 确认课程学习时间
         keshi = driver.find_element_by_xpath('//*[@id="study"]/span[1]/strong').text
+        print(f"本科总课时{keshi}")
         yixueshijian = driver.find_element_by_xpath('/html/body/div[2]/div[2]/div[2]/div[1]/span[2]/strong').text
-        if int (keshi)-int(yixueshijian)>0:
+        if int(keshi) - int(yixueshijian) > 0:
             study_time = int(keshi) - int(yixueshijian)
         else:
-            study_time = 0.01
-        print(study_time)
+            study_time = 1
+        print(f"本次需要学习{study_time}分钟")
         iframe = driver.find_element_by_xpath('//*[@id="playResourceFrame"]')
 
         driver.switch_to_frame(iframe)
@@ -80,4 +140,5 @@ while True:
     driver.refresh()
     time.sleep(5)
 
-    print("干部培训网，完成第"+str(xuexicishu)+"次学习")
+    print("干部培训网，完成第" + str(xuexicishu) + "次学习")
+
